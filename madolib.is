@@ -414,6 +414,18 @@ let Madolib = {
         Madolib.Array.findNearValues(xs, targetValue, getValue)[0]
       }
     }
+    /**
+     * 配列内の指定要素のindexを取得する
+     * arr<T> -> T -> num
+     *
+     * @return 指定の値が見つかった場合はそのindex, 見つからなかった場合は-1
+     */
+    findIndex: @(xs, value) {
+      for (let i, xs.len) {
+        if (xs[i] == value) { return i }
+      }
+      -1
+    }
   }
 
   Obj: {
