@@ -188,11 +188,7 @@ let Madolib = {
      * @param lazyValue indexを受け取り、任意の値を返す関数
      */
     create: @(num, lazyValue) {
-      let result = []
-      for (let i, num) {
-        result.push(lazyValue(i))
-      }
-      result
+      Core:range(0, num).map(@(x) { lazyValue(x) })
     }
 
     /**
@@ -206,7 +202,7 @@ let Madolib = {
     }
 
     /**
-     * 渡された配列をシャッフルした新しい配列を生成する
+     * 元の配列をシャッフルした新しい配列を生成する
      * arr<T> -> arr<T>
      */
     shuffle: @(xs) {
@@ -221,7 +217,7 @@ let Madolib = {
     }
 
     /**
-     * 配列内のランダムな要素を取得する
+     * ランダムな要素を取得する
      * arr<T> -> T | null
      *
      * @return 配列の要素数が0ならnull, そうでなければ配列内のランダムな要素
@@ -268,9 +264,8 @@ let Madolib = {
     }
 
     /**
-     * 配列の中身が一致しているかどうか判定する
+     * 全要素が一致しているかどうか判定する(deep equal)
      * arr<any> -> arr<any> -> bool
-     *
      */
     equals: @(xs, ys) {
       match true {
@@ -464,7 +459,7 @@ let Madolib = {
     }
 
     /**
-     * objの中身が一致しているかどうか判定する
+     * 全要素が一致しているかどうか判定する
      * obj<any, any> -> obj<any, any> -> bool
      */
     equals: @(obj1, obj2) {
@@ -483,20 +478,17 @@ let Madolib = {
     /**
      * key,valueが同じ内容の新しいobjを生成する
      *
-     * str, numの要素は新しい参照に変更する。それ以外はObj:copyと同じ
+     * numは新しい参照に変更する
+     * それ以外はObj:copyと同じ
      *
      * obj<any, any> -> obj<any, any>
      */
     copy: @(obj) {
-      let newObj = {}
-      each (let kv, Obj:kvs(obj)) {
-        let v = kv[1]
-        let value = match Core:type(v) {
-          "str" => `{v}`
-          "num" => 0 + v
-          * => v
+      let newObj = Obj:copy(obj)
+      each (let kv, Obj:kvs(newObj)) {
+        match Core:type(kv[1]) {
+          "num" => Obj:set(newObj, kv[0], 0 + kv[1])
         }
-        Obj:set(newObj, kv[0], value)
       }
       newObj
     }
