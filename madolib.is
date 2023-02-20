@@ -439,6 +439,22 @@ let Madolib = {
       let itemIndex = Madolib.Array.findIndex(xs, value)
       Madolib.Array.removeAt(xs, itemIndex)
     }
+
+    /**
+     * 元配列の先頭から指定個数の要素を取り出した新しい配列を生成する
+     * arr<T> -> num -> arr<T>
+     */
+    take: @(xs, num) {
+      if num >= 0 { xs.slice(0, num) } else { [] }
+    }
+
+    /**
+     * 元配列の先頭から指定個数の要素を取り除いた新しい配列を生成する
+     * arr<T> -> num -> arr<T>
+     */
+    drop: @(xs, num) {
+      if num >= 0 { xs.slice(num, xs.len) } else { [] }
+    }
   }
 
   Obj: {
