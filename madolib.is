@@ -1,5 +1,7 @@
 //----------------------------------------
 // Mado Library
+// MIT LICENSE
+// https://github.com/madorama/aiscript-library/blob/master/LICENSE
 //----------------------------------------
 let Madolib = {
   Set: {
