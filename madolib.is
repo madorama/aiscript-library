@@ -1,0 +1,604 @@
+//----------------------------------------
+// Mado Library
+//----------------------------------------
+let Madolib = {
+  Set: {
+    /**
+     * constructor
+     * () -> Set
+     */
+    new: @() {
+      let this = {}
+
+      let innerObj = {}
+
+      /**
+       * Key : num | str | bool | null
+       */
+
+      /**
+       * 要素を追加する
+       * Key -> ()
+       */
+      this.add = @(k) {
+        Obj:set(innerObj, `{k}`, true)
+      }
+
+      /**
+       * 要素が存在するかどうか
+       * Key -> bool
+       *
+       * 要素が存在するならtrue, 存在しないならfalse
+       */
+      this.exist = @(k) {
+        Obj:has(innerObj, `{k}`)
+      }
+
+      /**
+       * 配列に変換する
+       * () -> arr<Key>
+       */
+      this.toArray = @() {
+        Obj:keys(innerObj)
+      }
+
+      /**
+       * 要素を削除する
+       * Key -> ()
+       */
+      this.remove = @(k) {
+        let newObj = {}
+        each (let key, this.toArray()) {
+          if key != k { Obj:set(newObj, key, true) }
+        }
+        innerObj = newObj
+      }
+
+      /**
+       * 同一の内容を持つSetを生成する
+       * () -> Set
+       */
+      this.copy = @() {
+        let newSet = Set.new()
+        each (let key, this.toArray()) {
+          newSet.add(key)
+        }
+        newSet
+      }
+
+      /**
+       * 別のSetとの差を新しいSetとして生成する
+       * Set -> Set
+       */
+      this.difference = @(otherSet) {
+        let result = this.copy()
+        each (let key, otherSet.toArray()) {
+          result.remove(key)
+        }
+        result
+      }
+
+      /**
+       * 別のSetと統合した新しいSetを生成する
+       * Set -> Set
+       */
+      this.merge = @(otherSet) {
+        let result = this.copy()
+        each (let key, otherSet.toArray()) {
+          result.add(key)
+        }
+        result
+      }
+
+      this
+    }
+  }
+
+  WalkersAlias: {
+    /**
+     * 重み付き乱択(Walker's Alias Method)
+     * constructor
+     * arr<{ item: any, weight: num }> -> WalkersAlias
+     */
+    new: @(items) {
+      let this = {}
+      this.items = []
+      this.weights = []
+      this.aliases = []
+      this.normalized = []
+
+      let randomIndex = @(r) {
+        var length = this.weights.len
+        if length == 0 { return -1 }
+        let random = r() * length
+        let index = Math:floor(random)
+        let outOfBounds = index >= length
+        let weight = if outOfBounds { 1.0 } else { random - index }
+        if outOfBounds { index = length - 1 }
+        if this.normalized[index] <= weight {
+          index = this.aliases[index]
+        }
+        index
+      }
+
+      /**
+       * ランダムな要素を取得する
+       * rng -> any
+       */
+      this.random = @(r) {
+        let index = this.randomIndex(r)
+        if index == -1 { null } else { this.items[index] }
+      }
+
+      // Initialize
+      var totalWeight = 0
+      each (let x, items) {
+        this.items.push(x.item)
+        let w = if x.weight > 0.0 { x.weight } else { 0 }
+        this.weights.push(w)
+        totalWeight += w
+      }
+
+      let indexes = []
+      let len = this.weights.len
+      let normalizeRatio = len / totalWeight
+      var left = -1
+      var right = 0 + len
+      for (let i, len) {
+        this.aliases[i] = i
+        var w = this.weights[i]
+        w = w * if w > 0.0 { normalizeRatio } else { 0 }
+        this.normalized[i] = w
+        if w < 1.0 {
+          left += 1
+          indexes[left] = i
+        } else {
+          right -= 1
+          indexes[right] = i
+        }
+      }
+
+      if left >= 0 && right < len {
+        left = 0
+        loop {
+          if !(left < len && right < len) break
+          let leftIndex = indexes[left]
+          let rightIndex = indexes[right]
+          this.aliases[leftIndex] = rightIndex
+          let leftWeight = this.normalized[leftIndex]
+          let rightWeight = this.normalized[rightIndex] + leftWeight - 1.0
+          this.normalized[rightIndex] = rightWeight
+          if rightWeight < 1.0 { right += 1 }
+          left += 1
+        }
+      }
+
+      this
+    }
+  }
+
+  Array: {
+    /**
+     * 任意個数の新しい配列を生成する
+     * num -> (num -> T) -> arr<T>
+     *
+     * @param num 個数
+     * @param lazyValue indexを受け取り、任意の値を返す関数
+     */
+    create: @(num, lazyValue) {
+      let result = []
+      for (let i, num) {
+        result.push(lazyValue(i))
+      }
+      result
+    }
+
+    /**
+     * arr<T> -> (T -> num -> R) -> arr<R>
+     *
+     * MEMO:
+     * arr.mapのindexが1起点なのが0起点になれば不要になる
+     */
+    map: @(xs, f) {
+      xs.map(@(x, i) { f(x, i - 1) })
+    }
+
+    /**
+     * 渡された配列をシャッフルした新しい配列を生成する
+     * arr<T> -> arr<T>
+     */
+    shuffle: @(xs) {
+      let result = xs.copy()
+      for (let i, result.len) {
+        let r = Math:rnd(i, result.len - 1)
+        let temp = result[i]
+        result[i] = result[r]
+        result[r] = temp
+      }
+      result
+    }
+
+    /**
+     * 配列内のランダムな要素を取得する
+     * arr<T> -> T | null
+     *
+     * @return 配列の要素数が0ならnull, そうでなければ配列内のランダムな要素
+     */
+    choice: @(xs) {
+      match true {
+        xs.len == 0 => null
+        * => xs[Math:rnd(0, xs.len - 1)]
+      }
+    }
+
+    /**
+     * 全ての要素がpredを満たしているかどうか判定する
+     * arr<T> -> (T -> bool) -> bool
+     *
+     * @return predを満たしていない要素があればfalse, なければtrue
+     */
+    all: @(xs, pred) {
+      each (let x, xs) {
+        if !pred(x) return false
+      }
+      true
+    }
+
+    /**
+     * 一つ以上の要素がpredを満たしているかどうか判定する
+     * arr<T> -> (T -> bool) -> bool
+     *
+     * @return predを満たしている要素が一つでもあればtrue, なければfalse
+     */
+    any: @(xs, pred) {
+      each (let x, xs) {
+        if pred(x) return true
+      }
+      false
+    }
+
+    /**
+     * 全要素の合計を計算する
+     * arr<num> -> num
+     */
+    sum: @(xs) {
+      xs.reduce(@(acc, x) { acc + x }, 0)
+    }
+
+    /**
+     * 配列の中身が一致しているかどうか判定する
+     * arr<any> -> arr<any> -> bool
+     *
+     */
+    equals: @(xs, ys) {
+      match true {
+        xs == null && ys == null => true
+        xs == null || ys == null => false
+        xs.len != ys.len => false
+        * => {
+          for (let i, xs.len) {
+            if !Madolib.Util.eq(xs[i], ys[i]) return false
+          }
+          true
+        }
+      }
+    }
+
+    /**
+     * 元の配列を反転した新しい配列を生成する
+     * arr<T> -> arr<T>
+     */
+    reversed: @(xs) {
+      let copy = xs.copy()
+      copy.reverse()
+      copy
+    }
+
+    /**
+     * マージソート
+     * arr<T> -> (T -> T -> num) -> null
+     */
+    sort: @(xs, cmp) {
+      if xs.len <= 1 { return null }
+
+      let middle = Math:floor(xs.len / 2)
+      let left = xs.slice(0, middle)
+      Madolib.Array.sort(left, cmp)
+      let right = xs.slice(middle, xs.len)
+      Madolib.Array.sort(right, cmp)
+
+      let merge = left.concat(Madolib.Array.reversed(right))
+      var l = 0
+      var r = xs.len - 1
+
+      for (let i, xs.len) {
+        if cmp(merge[l], merge[r]) > 0 {
+          xs[i] = merge[r]
+          r -= 1
+        } else {
+          xs[i] = merge[l]
+          l += 1
+        }
+      }
+    }
+
+    /**
+     * 元の配列をマージソートした新しい配列を生成する
+     * arr<T> -> (T -> T -> num) -> arr<T>
+     */
+    sorted: @(xs, cmp) {
+      let copy = xs.copy()
+      Madolib.Array.sort(copy, cmp)
+      copy
+    }
+
+    /**
+     * 最大の要素を取得する
+     * arr<T> -> (T -> num) -> T
+     */
+    maxBy: @(xs, f) {
+      if xs.len == 0 {
+        null
+      } else {
+        let maxValue = f(xs[0])
+        let result = xs[0]
+        each (let x, xs) {
+          let v = f(x)
+          if v > maxValue {
+            maxValue = v
+            result = x
+          }
+        }
+        result
+      }
+    }
+
+    /**
+     * 最小の要素を取得する
+     * arr<T> -> (T -> num) -> T
+     */
+    minBy: @(xs, f) {
+      if xs.len == 0 {
+        null
+      } else {
+        let minValue = f(xs[0])
+        let result = xs[0]
+        each (let x, xs) {
+          let v = f(x)
+          if v < minValue {
+            minValue = v
+            result = x
+          }
+        }
+        result
+      }
+    }
+
+    /**
+     * 元の配列内のtargetValueに最も近い値の入った配列を生成する
+     * arr<T> -> num -> (T -> num) -> arr<T>
+     *
+     * @param xs 配列
+     * @param targetValue 指定値
+     * @param getValue Tから値を取得する関数
+     * @return 配列の要素数が0ならnull, そうでなければtargetValueに最も近い値の入った配列
+     */
+    findNearValues: @(xs, targetValue, getValue) {
+      if xs.len == 0 {
+        []
+      } else {
+        let calcValue = @(x) { Math:abs(getValue(x) - targetValue) }
+        let minValue = calcValue(Madolib.Array.minBy(xs, calcValue))
+        let result = []
+        each (let x, xs) {
+          if calcValue(x) == minValue {
+            result.push(x)
+          }
+        }
+        result
+      }
+    }
+
+    /**
+     * 配列内で最初にtargetValueに近い値を取得する
+     * arr<T> -> num -> (T -> num) -> T | null
+     *
+     * @return 配列の要素数が0ならnull, そうでなければ最初にtargetValueに近い値
+     */
+    findNearValue: @(xs, targetValue, getValue) {
+      if xs.len == 0 {
+        null
+      } else {
+        Madolib.Array.findNearValues(xs, targetValue, getValue)[0]
+      }
+    }
+  }
+
+  Obj: {
+    /**
+     * 各要素に `関数f` を適用する
+     *
+     * `f` の返り値がfalseの場合、そこで処理を中断する
+     *
+     * obj<K, V> -> (K -> V -> bool) -> bool
+     *
+     * @return `f` の返り値がfalseの場合false, そうでない場合true
+     */
+    forEach: @(obj, f) {
+      each (let kv, Obj:kvs(obj)) {
+        if !f(kv[0], kv[1]) return false
+      }
+      true
+    }
+
+    /**
+     * objの中身が一致しているかどうか判定する
+     * obj<any, any> -> obj<any, any> -> bool
+     */
+    equals: @(obj1, obj2) {
+      match true {
+        obj1 == null && obj2 == null => true
+        obj1 == null || obj2 == null => false
+        * => Madolib.Obj.forEach(obj1, @(k, v) {
+          match true {
+            !Obj:has(obj2, k) => false
+            * => Madolib.Util.eq(v, Obj:get(obj2, k))
+          }
+        })
+      }
+    }
+
+    /**
+     * key,valueが同じ内容の新しいobjを生成する
+     *
+     * str, numの要素は新しい参照に変更する。それ以外はObj:copyと同じ
+     *
+     * obj<any, any> -> obj<any, any>
+     */
+    copy: @(obj) {
+      let newObj = {}
+      each (let kv, Obj:kvs(obj)) {
+        let v = kv[1]
+        let value = match Core:type(v) {
+          "str" => `{v}`
+          "num" => 0 + v
+          * => v
+        }
+        Obj:set(newObj, kv[0], value)
+      }
+      newObj
+    }
+
+    /**
+     * `obj1`, `obj2` を統合した新しいobjを生成する
+     *
+     * 同じkeyの場合 `obj2` のvalueが優先される
+     *
+     * obj<any, any> -> obj<any, any> -> obj<any, any>
+     */
+    merge: @(obj1, obj2) {
+      match true {
+        obj1 == null && obj2 == null => {}
+        obj1 == null => obj2
+        obj2 == null => obj1
+        * => {
+          let newObj = Obj:copy(obj1)
+          Madolib.Obj.forEach(obj2, @(k, v) {
+            Obj:set(newObj, k, v)
+            true
+          })
+          newObj
+        }
+      }
+    }
+  }
+
+  Util: {
+    /**
+     * 指定面数のダイスを指定個数振る
+     * num -> num -> arr<num>
+     *
+     * @return 各ダイスの結果配列
+     */
+    diceRoll: @(diceNum, diceFace) {
+      Madolib.Array.create(diceNum, @() { Math:rnd(1, diceFace) })
+    }
+
+    /**
+     * `v` が `min` ～ `max` の何%なのか計算する
+     *
+     * 0除算が發生した場合nullが返る
+     * num -> num -> num -> num | null
+     *
+     * example.
+     * percent(15, 10, 20) // 0.5
+     */
+    percent: @(v, min, max) {
+      if max - min == 0 {
+        null
+      } else {
+        (v - min) / (max - min)
+      }
+    }
+
+    /**
+     * `min` ～ `max` の `p` %の値を計算する
+     * num -> num -> num -> num
+     *
+     * example.
+     * percentToValue(0.5, 10, 20) // 15
+     */
+    percentToValue: @(p, min, max) {
+      min + (max - min) * p
+    }
+
+    /**
+     * 値を文字列に変換する
+     *
+     * T -> str
+     */
+    toString: @(x) {
+      match Core:type(x) {
+        "num" => `{x}`
+        "str" => `"{x}"`
+        "null" => "null"
+        "bool" => if x "true" else "false"
+        "arr" => `[{x.map(Madolib.Util.toString).join(",")}]`
+        "obj" => {
+          let result = Obj:kvs(x).map(@(kv) {
+            `{kv[0]}:{Madolib.Util.toString(kv[1])}`
+          }).join(",")
+          `\{{result}\}`
+        }
+        "fn" => "@"
+        * => "?"
+      }
+    }
+
+    /**
+     * 文字列に変換した値をprintする
+     * T -> T
+     *
+     * @return 値をそのまま返す
+     *
+     * example.
+     * let x = log(42) + log(42) // 84
+     */
+    log: @(x) {
+      print(Madolib.Util.toString(x))
+      x
+    }
+
+    /**
+     * 値が一致しているか判定する
+     * any -> any -> bool
+     */
+    eq: @(x, y) {
+      match true {
+        x == null && y == null => true
+        x == null || y == null => false
+        Core:type(x) != Core:type(y) => false
+        * => {
+          match Core:type(x) {
+            "arr" => Madolib.Array.equals(x, y)
+            "obj" => Madolib.Obj.equals(x, y)
+            * => x == y
+          }
+        }
+      }
+    }
+
+    /**
+     * num -> bool
+     */
+    chance: @(chance) {
+      let base = 100
+      chance = Math:floor(chance)
+      match true {
+        chance >= base => true
+        chance == 0 => false
+        * => Math:rnd(0, base - 1) < chance
+      }
+    }
+  }
+}
