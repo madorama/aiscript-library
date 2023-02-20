@@ -414,6 +414,7 @@ let Madolib = {
         Madolib.Array.findNearValues(xs, targetValue, getValue)[0]
       }
     }
+
     /**
      * 配列内の指定要素のindexを取得する
      * arr<T> -> T -> num
@@ -425,6 +426,23 @@ let Madolib = {
         if (xs[i] == value) { return i }
       }
       -1
+    }
+
+    /**
+     * 元の配列から指定indexの値を取り除いた新しい配列を生成する
+     * arr<T> -> num -> arr<T>
+     */
+    removeAt: @(xs, index) {
+      xs.slice(0, index).concat(xs.slice(index + 1, xs.len))
+    }
+
+    /**
+     * 元の配列から指定要素を取り除いた新しい配列を生成する
+     * arr<T> -> T -> null
+     */
+    remove: @(xs, value) {
+      let itemIndex = Madolib.Array.findIndex(xs, value)
+      Madolib.Array.removeAt(xs, itemIndex)
     }
   }
 
