@@ -455,6 +455,16 @@ let Madolib = {
     drop: @(xs, num) {
       if num >= 0 { xs.slice(num, xs.len) } else { [] }
     }
+
+    /**
+     * 元配列の指定indexの場所に要素を挿入した新しい配列を生成する
+     * arr<T> -> num -> arr<T> | T -> arr<T>
+     */
+    insert: @(xs, index, value) {
+      Madolib.Array.take(xs, index).concat(
+        if Core:type(value) == "arr" { value } else { [value] }
+      ).concat(Madolib.Array.drop(xs, index))
+    }
   }
 
   Obj: {
