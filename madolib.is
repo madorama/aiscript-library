@@ -128,7 +128,7 @@ let Madolib = {
        * rng -> any
        */
       this.random = @(r) {
-        let index = this.randomIndex(r)
+        let index = randomIndex(r)
         if index == -1 { null } else { this.items[index] }
       }
 
