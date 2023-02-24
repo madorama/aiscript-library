@@ -188,7 +188,7 @@ let Madolib = {
      * @param lazyValue indexを受け取り、任意の値を返す関数
      */
     create: @(num, lazyValue) {
-      Core:range(0, num).map(@(x) { lazyValue(x) })
+      Core:range(0, num - 1).map(@(x) { lazyValue(x) })
     }
 
     /**
