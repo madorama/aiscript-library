@@ -12,7 +12,7 @@ let Madolib = {
     new: @() {
       let this = {}
 
-      let innerObj = {}
+      var innerObj = {}
 
       /**
        * Key : num | str | bool | null
@@ -61,7 +61,7 @@ let Madolib = {
        * () -> Set
        */
       this.copy = @() {
-        let newSet = Set.new()
+        let newSet = Madolib.Set.new()
         each (let key, this.toArray()) {
           newSet.add(key)
         }
@@ -113,7 +113,7 @@ let Madolib = {
         var length = this.weights.len
         if length == 0 { return -1 }
         let random = r() * length
-        let index = Math:floor(random)
+        var index = Math:floor(random)
         let outOfBounds = index >= length
         let weight = if outOfBounds { 1.0 } else { random - index }
         if outOfBounds { index = length - 1 }
@@ -337,8 +337,8 @@ let Madolib = {
       if xs.len == 0 {
         null
       } else {
-        let maxValue = f(xs[0])
-        let result = xs[0]
+        var maxValue = f(xs[0])
+        var result = xs[0]
         each (let x, xs) {
           let v = f(x)
           if v > maxValue {
@@ -358,8 +358,8 @@ let Madolib = {
       if xs.len == 0 {
         null
       } else {
-        let minValue = f(xs[0])
-        let result = xs[0]
+        var minValue = f(xs[0])
+        var result = xs[0]
         each (let x, xs) {
           let v = f(x)
           if v < minValue {
