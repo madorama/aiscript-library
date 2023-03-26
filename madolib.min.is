@@ -1,0 +1,167 @@
+let Madolib={Set: {new: @(){let this={}
+var innerObj={}
+this.add=@(k){Obj:set(innerObj `{k}` true)}
+this.exist=@(k){Obj:has(innerObj `{k}`)}
+this.toArray=@(){Obj:keys(innerObj)}
+this.remove=@(k){let newObj={}
+each let key this.toArray() {if (key != k) {Obj:set(newObj key true)}}
+innerObj=newObj}
+this.copy=@(){let newSet=Madolib.Set.new()
+each let key this.toArray() {newSet.add(key)}
+newSet}
+this.difference=@(otherSet){let result=this.copy()
+each let key otherSet.toArray() {result.remove(key)}
+result}
+this.merge=@(otherSet){let result=this.copy()
+each let key otherSet.toArray() {result.add(key)}
+result}
+this}}
+WalkersAlias: {new: @(items){let this={}
+this.items=[]
+this.weights=[]
+this.aliases=[]
+this.normalized=[]
+let randomIndex=@(r){var length=this.weights.len
+if (length == 0) {return (-1)}
+let random=(r() * length)
+var index=Math:floor(random)
+let outOfBounds=(index >= length)
+let weight=if outOfBounds {1} else {(random - index)}
+if outOfBounds {index=(length - 1)}
+if (this.normalized[index] <= weight) {index=this.aliases[index]}
+index}
+this.random=@(r){let index=randomIndex(r)
+if (index == (-1)) {null} else {this.items[index]}}
+var totalWeight=0
+each let x items {this.items.push(x.item)
+let w=if (x.weight > 0) {x.weight} else {0}
+this.weights.push(w)
+totalWeight+=w}
+let indexes=[]
+let len=this.weights.len
+let normalizeRatio=(len / totalWeight)
+var left=(-1)
+var right=(0 + len)
+for let i len {this.aliases[i]=i
+var w=this.weights[i]
+w=(w * if (w > 0) {normalizeRatio} else {0})
+this.normalized[i]=w
+if (w < 1) {left+=1
+indexes[left]=i} else {right-=1
+indexes[right]=i}}
+if ((left >= 0) && (right < len)) {left=0
+loop {if !(((left < len) && (right < len))) break
+let leftIndex=indexes[left]
+let rightIndex=indexes[right]
+this.aliases[leftIndex]=rightIndex
+let leftWeight=this.normalized[leftIndex]
+let rightWeight=((this.normalized[rightIndex] + leftWeight) - 1)
+this.normalized[rightIndex]=rightWeight
+if (rightWeight < 1) {right+=1}
+left+=1}}
+this}}
+Array: {create: @(num lazyValue){Core:range(0 (num - 1)).map(@(x){lazyValue(x)})}
+map: @(xs f){xs.map(@(x i){f(x (i - 1))})}
+shuffle: @(xs){let result=xs.copy()
+for let i result.len {let r=Math:rnd(i (result.len - 1))
+let temp=result[i]
+result[i]=result[r]
+result[r]=temp}
+result}
+choice: @(xs){match true {(xs.len == 0)=>null
+*=>xs[Math:rnd(0 (xs.len - 1))]}}
+all: @(xs pred){each let x xs {if (!pred(x)) return false}
+true}
+any: @(xs pred){each let x xs {if pred(x) return true}
+false}
+sum: @(xs){xs.reduce(@(acc x){(acc + x)} 0)}
+equals: @(xs ys){match true {((xs == null) && (ys == null))=>true
+((xs == null) || (ys == null))=>false
+(xs.len != ys.len)=>false
+*=>{for let i xs.len {if (!Madolib.Util.eq(xs[i] ys[i])) return false}
+true}}}
+reversed: @(xs){let copy=xs.copy()
+copy.reverse()
+copy}
+sort: @(xs cmp){if (xs.len <= 1) {return null}
+let middle=Math:floor((xs.len / 2))
+let left=xs.slice(0 middle)
+Madolib.Array.sort(left cmp)
+let right=xs.slice(middle xs.len)
+Madolib.Array.sort(right cmp)
+let merge=left.concat(Madolib.Array.reversed(right))
+var l=0
+var r=(xs.len - 1)
+for let i xs.len {if (cmp(merge[l] merge[r]) > 0) {xs[i]=merge[r]
+r-=1} else {xs[i]=merge[l]
+l+=1}}}
+sorted: @(xs cmp){let copy=xs.copy()
+Madolib.Array.sort(copy cmp)
+copy}
+maxBy: @(xs f){if (xs.len == 0) {null} else {var maxValue=f(xs[0])
+var result=xs[0]
+each let x xs {let v=f(x)
+if (v > maxValue) {maxValue=v
+result=x}}
+result}}
+minBy: @(xs f){if (xs.len == 0) {null} else {var minValue=f(xs[0])
+var result=xs[0]
+each let x xs {let v=f(x)
+if (v < minValue) {minValue=v
+result=x}}
+result}}
+findNearValues: @(xs targetValue getValue){if (xs.len == 0) {[]} else {let calcValue=@(x){Math:abs((getValue(x) - targetValue))}
+let minValue=calcValue(Madolib.Array.minBy(xs calcValue))
+let result=[]
+each let x xs {if (calcValue(x) == minValue) {result.push(x)}}
+result}}
+findNearValue: @(xs targetValue getValue){if (xs.len == 0) {null} else {Madolib.Array.findNearValues(xs targetValue getValue)[0]}}
+findIndex: @(xs value){for let i xs.len {if (xs[i] == value) {return i}}
+(-1)}
+removeAt: @(xs index){xs.slice(0 index).concat(xs.slice((index + 1) xs.len))}
+remove: @(xs value){let itemIndex=Madolib.Array.findIndex(xs value)
+Madolib.Array.removeAt(xs itemIndex)}
+take: @(xs num){if (num >= 0) {xs.slice(0 num)} else {[]}}
+drop: @(xs num){if (num >= 0) {xs.slice(num xs.len)} else {[]}}
+insert: @(xs index value){Madolib.Array.take(xs index).concat(if (Core:type(value) == "arr") {value} else {[value]}).concat(Madolib.Array.drop(xs index))}}
+Obj: {forEach: @(obj f){each let kv Obj:kvs(obj) {if (!f(kv[0] kv[1])) return false}
+true}
+equals: @(obj1 obj2){match true {((obj1 == null) && (obj2 == null))=>true
+((obj1 == null) || (obj2 == null))=>false
+*=>Madolib.Obj.forEach(obj1 @(k v){match true {(!Obj:has(obj2 k))=>false
+*=>Madolib.Util.eq(v Obj:get(obj2 k))}})}}
+copy: @(obj){let newObj=Obj:copy(obj)
+each let kv Obj:kvs(newObj) {match Core:type(kv[1]) {"num"=>Obj:set(newObj kv[0] (0 + kv[1]))}}
+newObj}
+merge: @(obj1 obj2){match true {((obj1 == null) && (obj2 == null))=>{}
+(obj1 == null)=>obj2
+(obj2 == null)=>obj1
+*=>{let newObj=Obj:copy(obj1)
+Madolib.Obj.forEach(obj2 @(k v){Obj:set(newObj k v)
+true})
+newObj}}}}
+Util: {diceRoll: @(diceNum diceFace){Madolib.Array.create(diceNum @(){Math:rnd(1 diceFace)})}
+percent: @(v min max){if ((max - min) == 0) {null} else {((v - min) / (max - min))}}
+percentToValue: @(p min max){(min + ((max - min) * p))}
+toString: @(x){match Core:type(x) {"num"=>`{x}`
+"str"=>`"{x}"`
+"null"=>"null"
+"bool"=>if x "true" else "false"
+"arr"=>`[{x.map(Madolib.Util.toString).join(",")}]`
+"obj"=>{let result=Obj:kvs(x).map(@(kv){`{kv[0]}:{Madolib.Util.toString(kv[1])}`}).join(",")
+`{{result}}`}
+"fn"=>"@"
+*=>"?"}}
+log: @(x){print(Madolib.Util.toString(x))
+x}
+eq: @(x y){match true {((x == null) && (y == null))=>true
+((x == null) || (y == null))=>false
+(Core:type(x) != Core:type(y))=>false
+*=>{match Core:type(x) {"arr"=>Madolib.Array.equals(x y)
+"obj"=>Madolib.Obj.equals(x y)
+*=>(x == y)}}}}
+chance: @(chance){let base=100
+chance=Math:floor(chance)
+match true {(chance >= base)=>true
+(chance == 0)=>false
+*=>(Math:rnd(0 (base - 1)) < chance)}}}}
