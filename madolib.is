@@ -193,12 +193,10 @@ let Madolib = {
 
     /**
      * arr<T> -> (T -> num -> R) -> arr<R>
-     *
-     * MEMO:
-     * arr.mapのindexが1起点なのが0起点になれば不要になる
+     * **DEPRECATED**
      */
     map: @(xs, f) {
-      xs.map(@(x, i) { f(x, i - 1) })
+      xs.map(@(x, i) { f(x, i) })
     }
 
     /**

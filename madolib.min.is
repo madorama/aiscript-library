@@ -61,7 +61,7 @@ if (rightWeight < 1) {right+=1}
 left+=1}}
 this}}
 Array: {create: @(num lazyValue){Core:range(0 (num - 1)).map(@(x){lazyValue(x)})}
-map: @(xs f){xs.map(@(x i){f(x (i - 1))})}
+map: @(xs f){xs.map(@(x i){f(x (i))})}
 shuffle: @(xs){let result=xs.copy()
 for let i result.len {let r=Math:rnd(i (result.len - 1))
 let temp=result[i]
