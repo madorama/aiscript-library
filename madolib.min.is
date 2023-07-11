@@ -141,7 +141,7 @@ Madolib.Obj.forEach(obj2 @(k v){Obj:set(newObj k v)
 true})
 newObj}}}}
 Util: {diceRoll: @(diceNum diceFace){Madolib.Array.create(diceNum @(){Math:rnd(1 diceFace)})}
-percent: @(v min max){if ((max - min) == 0) {null} else {((v - min) / (max - min))}}
+percent: @(v min max){if ((max - min) == 0) {0} else {((v - min) / (max - min))}}
 percentToValue: @(p min max){(min + ((max - min) * p))}
 toString: @(x){match Core:type(x) {"num"=>`{x}`
 "str"=>`"{x}"`

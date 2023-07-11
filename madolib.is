@@ -555,7 +555,7 @@ let Madolib = {
     /**
      * `v` が `min` ～ `max` の何%なのか計算する
      *
-     * 0除算が發生した場合nullが返る
+     * `max - min` が0になる場合、0を返す
      * num -> num -> num -> num | null
      *
      * example.
@@ -563,7 +563,7 @@ let Madolib = {
      */
     percent: @(v, min, max) {
       if max - min == 0 {
-        null
+        0
       } else {
         (v - min) / (max - min)
       }
